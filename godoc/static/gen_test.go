@@ -19,21 +19,33 @@ func TestStaticIsUpToDate(t *testing.T) {
 	}
 	oldBuf, err := ioutil.ReadFile("static.go")
 	if err != nil {
-		t.Errorf("error while reading static.go: %v\n", err)
+		t.Fatalf("error while reading static.go: %v\n", err)
 	}
 
 	newBuf, err := Generate()
 	if err != nil {
-		t.Errorf("error while generating static.go: %v\n", err)
+		t.Fatalf("error while generating static.go: %v\n", err)
 	}
 
-	if bytes.Compare(oldBuf, newBuf) != 0 {
+	// Generate stamps time.Now().Year() into the copyright header on the
+	// first line, so the committed static.go only matches in the year it was
+	// generated. Compare everything after the first line.
+	if bytes.Compare(dropFirstLine(oldBuf), dropFirstLine(newBuf)) != 0 {
 		t.Error(`static.go is stale.  Run:
   $ go generate golang.org/x/tools/godoc/static
   $ git diff
 to see the differences.`)
 
 	}
+}
+
+// dropFirstLine returns b with everything up to and including the first
+// newline removed.
+func dropFirstLine(b []byte) []byte {
+	if i := bytes.IndexByte(b, '\n'); i >= 0 {
+		return b[i+1:]
+	}
+	return b
 }
 
 // TestAppendQuote ensures that AppendQuote produces a valid literal.

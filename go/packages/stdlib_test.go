@@ -6,6 +6,7 @@ package packages_test
 
 import (
 	"bytes"
+	"go/build"
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
@@ -58,6 +59,14 @@ func TestStdlibMetadata(t *testing.T) {
 }
 
 func TestCgoOption(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("network-related cgo symbols (net.cgoLookupHost) don't exist on windows")
+	}
+	// In nocgo builds there is no "runtime/cgo" package, so cgo-generated
+	// Go files will have a failing import (see the commented-out guard below).
+	if !build.Default.CgoEnabled {
+		t.Skip("cgo is disabled")
+	}
 	if testing.Short() {
 		t.Skip("skipping in short mode; uses tons of memory (https://golang.org/issue/14113)")
 	}
